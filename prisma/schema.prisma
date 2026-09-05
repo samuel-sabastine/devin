@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  CONDO
+  TOWNHOUSE
+  LAND
+}
+
+enum ListingStatus {
+  FOR_SALE
+  FOR_RENT
+  SOLD
+  PENDING
+}
+
+model Agent {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  phone     String
+  photoUrl  String?
+  bio       String?
+  listings  Listing[]
+  inquiries Inquiry[]
+  createdAt DateTime  @default(now())
+}
+
+model Listing {
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  title        String
+  description  String
+  price        Int
+  type         PropertyType
+  status       ListingStatus  @default(FOR_SALE)
+  bedrooms     Int
+  bathrooms    Int
+  areaSqft     Int
+  yearBuilt    Int?
+  address      String
+  city         String
+  state        String
+  zip          String
+  latitude     Float
+  longitude    Float
+  featured     Boolean        @default(false)
+  amenities    String[]
+  images       ListingImage[]
+  agent        Agent          @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId      String
+  inquiries    Inquiry[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([city, status])
+  @@index([price])
+  @@index([type])
+}
+
+model ListingImage {
+  id        String  @id @default(cuid())
+  url       String
+  alt       String
+  position  Int     @default(0)
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingId String
+
+  @@index([listingId, position])
+}
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  listingId String?
+  agent     Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agentId   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
